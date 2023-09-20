@@ -1,4 +1,5 @@
 <?php
+$login_error = "";
 // Vérification du formulaire de connexion
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     $email = $_POST["email"];
@@ -10,6 +11,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         $username = getenv("MYSQL_USER");
         $password_db = getenv("MYSQL_PASSWORD");
         $dbname = getenv("MYSQL_DATABASE");
+         
 
         $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
@@ -35,11 +37,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 
 
              } else {
-                echo "Mot de passe incorrect"; 
+                $login_error = "error"; 
              }
 
         } else {
-            echo "Utilisateur non trouvé"; 
+            $login_error = "error";
         }
     } catch (PDOException $e){
         echo "Erreur de base de données : " . $e->getMessage(); 
@@ -91,6 +93,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             <input type="password" class="form-control" id="password" name="password" required>
         </div>
 
+        <?php 
+            if($login_error === "error"){
+                echo "<p style='color: red;'>Les identifiants sont incorrectes.</p>"; 
+            }
+        ?>
         <!-- Option : Se souvenir de moi -->
         <div class="form-group form-check">
             <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
