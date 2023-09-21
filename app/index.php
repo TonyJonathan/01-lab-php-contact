@@ -4,8 +4,6 @@ $login_error = "";
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     $email = $_POST["email"];
     $password = $_POST["password"];
-    $id = $_POST["id"];
-    
     try{
         // Établir une connexion à la base de données avec PDO
         $servername = "mysql:host=mysql";
