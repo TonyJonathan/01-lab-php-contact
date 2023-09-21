@@ -4,6 +4,7 @@ $login_error = "";
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     $email = $_POST["email"];
     $password = $_POST["password"];
+    $id = $_POST["id"];
     
     try{
         // Établir une connexion à la base de données avec PDO
@@ -31,8 +32,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             $hashed_password = $row['mot_de_passe'];
              // Vérifier si le mot de passe saisi correspond au mot de passe haché en base de données
              if(password_verify($password, $hashed_password)){
+                // Retrouver le nom de l'id
+                $user_id = $row['id']; 
+                session_start();
+               $_SESSION['user_id'] = $user_id; 
+          
                 // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée  
-                header('Location: dashbord.html'); 
+                header('Location: dashbord.php'); 
                 exit();
 
 
