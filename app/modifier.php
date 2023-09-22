@@ -1,43 +1,55 @@
-<?php
+<?php 
+session_start();
 if($_SERVER['REQUEST_METHOD'] == "POST"){
 
-    $nom = $_POST['nom']; 
-    $prenom = $_POST['prenom'];
-    $email = $_POST['email'];
-    $id = $_GET['id'];
+    if(
+        isset($_POST['csrf_token']) &&
+        isset($_SESSION['csrf_token']) &&
+        $_SESSION['csrf_token'] === $_POST['csrf_token']
+    ) {
+        $nom = $_POST['nom']; 
+        $prenom = $_POST['prenom'];
+        $email = $_POST['email'];
+        $id = $_GET['id'];
+    
+        try{
+            // Établir une connexion à la base de données avec PDO
+            $servername = "mysql:host=mysql";
+            $username = getenv("MYSQL_USER");
+            $password_db = getenv("MYSQL_PASSWORD");
+            $dbname = getenv("MYSQL_DATABASE");
+    
+            $conn = new PDO("$servername;dbname=$dbname;charset=utf8", $username, $password_db);
+            
+            // Définir le mode d'erreur PDO sur exception (sert à gérer les erreurs plus facilement)
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+            
+            $sql = "UPDATE contacts set nom = :nom, prenom = :prenom, email = :email WHERE id = :id";
+    
+            $stmt = $conn->prepare($sql); 
+            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':nom', $nom);
+            $stmt->bindParam(':prenom', $prenom);
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
+    
+            header('Location: dashbord.php');
+            exit();
+            
+        } catch (PDOException $e){
+            echo "Erreur dans l'inscription des données : " . $e->getMessage(); 
+        }
+    
+        $conn = null; 
 
-    try{
-        // Établir une connexion à la base de données avec PDO
-        $servername = "mysql:host=mysql";
-        $username = getenv("MYSQL_USER");
-        $password_db = getenv("MYSQL_PASSWORD");
-        $dbname = getenv("MYSQL_DATABASE");
-
-        $conn = new PDO("$servername;dbname=$dbname;charset=utf8", $username, $password_db);
-        
-        // Définir le mode d'erreur PDO sur exception (sert à gérer les erreurs plus facilement)
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        
-        $sql = "UPDATE contacts set nom = :nom, prenom = :prenom, email = :email WHERE id = :id";
-
-        $stmt = $conn->prepare($sql); 
-        $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':nom', $nom);
-        $stmt->bindParam(':prenom', $prenom);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-
-        header('Location: dashbord.php');
-        exit();
-        
-    } catch (PDOException $e){
-        echo "Erreur dans l'inscription des données : " . $e->getMessage(); 
+    } else {
+        echo "CSRF error"; 
     }
-
-    $conn = null; 
 }
 
+$csrf_token = bin2hex(random_bytes(32));
+$_SESSION['crsf_token'] = $csrf_token; 
 
 ?>
 
@@ -123,7 +135,8 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 
                 } 
                 ?>
-
+                
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <button type="submit" class="btn btn-primary">Modifier</button>
             </form>
         </div>
