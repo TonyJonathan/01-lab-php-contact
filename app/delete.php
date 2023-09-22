@@ -1,5 +1,4 @@
 <?php 
-
 if (isset($_GET['id'])){
     $id_contact = $_GET['id']; 
         // Établir une connexion à la base de données avec PDO

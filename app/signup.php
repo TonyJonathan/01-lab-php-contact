@@ -1,59 +1,71 @@
 <?php
+session_start(); 
+
    // Récupérer les données soumises
 if ($_SERVER["REQUEST_METHOD"] == "POST"){
-    $prenom = $_POST["prenom"]; 
-    $nom = $_POST["nom"];
-    $email = $_POST["email"]; 
-    $password = $_POST["password"]; 
-    $password_repeat = $_POST["password_repeat"]; 
+    if(
+        isset($_POST['csrf_token']) &&
+        isset($_SESSION['csrf_token']) &&
+        $_SESSION['csrf_token'] === $_POST['csrf_token']
+    ) {
 
+        $prenom = $_POST["prenom"]; 
+        $nom = $_POST["nom"];
+        $email = $_POST["email"]; 
+        $password = $_POST["password"]; 
+        $password_repeat = $_POST["password_repeat"]; 
 
+        if($password === $password_repeat){
 
-    if($password === $password_repeat){
+            try{
+                // Établir une connexion à la base de données avec PDO
+                $servername = "mysql:host=mysql";
+                $username = getenv("MYSQL_USER");
+                $password_db = getenv("MYSQL_PASSWORD");
+                $dbname = getenv("MYSQL_DATABASE");
 
-        try{
-            // Établir une connexion à la base de données avec PDO
-            $servername = "mysql:host=mysql";
-            $username = getenv("MYSQL_USER");
-            $password_db = getenv("MYSQL_PASSWORD");
-            $dbname = getenv("MYSQL_DATABASE");
+                $conn = new PDO("$servername;dbname=$dbname;charset=utf8", $username, $password_db);
+                
+                // Définir le mode d'erreur PDO sur exception (sert à gérer les erreurs plus facilement)
+                $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $conn = new PDO("$servername;dbname=$dbname;charset=utf8", $username, $password_db);
+                // Préparer une requête SQL pour insérer les données
+                $sql = "INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe) values (:prenom, :nom, :email, :mot_de_passe)";
+                $stmt = $conn->prepare($sql); 
+
+                // Hacher le mot de passe avant de l'insérer dans la base de données (pour des raisons de sécurité)
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT); 
+
+                // Lier les paramètres et exécuter la requête
+                $stmt->bindParam(':prenom', $prenom);
+                $stmt->bindParam(':nom', $nom); 
+                $stmt->bindParam(':email', $email);
+                $stmt->bindParam(':mot_de_passe', $hashed_password); 
+
+                $stmt->execute(); 
+
+            header('Location: index.php');
+            exit();
             
-            // Définir le mode d'erreur PDO sur exception (sert à gérer les erreurs plus facilement)
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // Préparer une requête SQL pour insérer les données
-            $sql = "INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe) values (:prenom, :nom, :email, :mot_de_passe)";
-            $stmt = $conn->prepare($sql); 
+            } catch (PDOExeption $e) {
+                echo "Erreur dans l'inscription des données : " . $e->getMessage(); 
+            }
 
-            // Hacher le mot de passe avant de l'insérer dans la base de données (pour des raisons de sécurité)
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT); 
-
-            // Lier les paramètres et exécuter la requête
-            $stmt->bindParam(':prenom', $prenom);
-            $stmt->bindParam(':nom', $nom); 
-            $stmt->bindParam(':email', $email);
-            $stmt->bindParam(':mot_de_passe', $hashed_password); 
-
-            $stmt->execute(); 
-
-           header('Location: index.php');
-           exit();
-         
-
-        } catch (PDOExeption $e) {
-            echo "Erreur dans l'inscription des données : " . $e->getMessage(); 
+            //Fermer la connection à la base de données 
+            $conn = null;
+        
+        } else {
+            echo "Les mots de passe ne correspondent pas.";
         }
 
-        //Fermer la connection à la base de données 
-        $conn = null;
-      
     } else {
-        echo "Les mots de passe ne correspondent pas.";
+        echo 'CSRF error';
     }
 }
 
+$csrf_token = bin2hex(random_bytes(32)); 
+$_SESSION['csrf_token'] = $csrf_token; 
 
 ?>
 
@@ -107,6 +119,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
             <label for="password_repeat">Répéter le mot de passe</label>
             <input type="password" class="form-control" id="password_repeat" name="password_repeat" required>
         </div>
+
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
         <!-- Bouton d'envoi -->
         <button type="submit" class="btn btn-primary">S'inscrire</button>

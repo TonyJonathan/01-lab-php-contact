@@ -1,61 +1,75 @@
 <?php
+session_start();
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 $login_error = "";
 // Vérification du formulaire de connexion
 if($_SERVER["REQUEST_METHOD"] == "POST"){
-    $email = $_POST["email"];
-    $password = $_POST["password"];
-    try{
-        // Établir une connexion à la base de données avec PDO
-        $servername = "mysql:host=mysql";
-        $username = getenv("MYSQL_USER");
-        $password_db = getenv("MYSQL_PASSWORD");
-        $dbname = getenv("MYSQL_DATABASE");
-         
+    if(
+        isset($_SESSION['csrf_token']) &&
+        isset($_POST['csrf_token']) && 
+        $_SESSION['csrf_token'] === $_POST['csrf_token']
+    ) {
+        $email = $_POST["email"];
+        $password = $_POST["password"];
+        try{
+            // Établir une connexion à la base de données avec PDO
+            $servername = "mysql:host=mysql";
+            $username = getenv("MYSQL_USER");
+            $password_db = getenv("MYSQL_PASSWORD");
+            $dbname = getenv("MYSQL_DATABASE");
+            
 
-        $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
+            $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
-        // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
-        $sql = "SELECT id, mot_de_passe FROM utilisateurs WHERE email = :email";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
+            // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
+            $sql = "SELECT id, mot_de_passe FROM utilisateurs WHERE email = :email";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
 
+            // Récupérer le résultat de la requête
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Récupérer le résultat de la requête
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Si un utilisateur correspondant est trouvé
 
-        // Si un utilisateur correspondant est trouvé
+            if($row) {
+                $hashed_password = $row['mot_de_passe'];
+                // Vérifier si le mot de passe saisi correspond au mot de passe haché en base de données
+                if(password_verify($password, $hashed_password)){
+                    // Retrouver le nom de l'id
+                    $user_id = $row['id']; 
+                    
+                $_SESSION['user_id'] = $user_id; 
+            
+                    // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée  
+                    header('Location: dashbord.php'); 
+                    exit();
 
-        if($row) {
-            $hashed_password = $row['mot_de_passe'];
-             // Vérifier si le mot de passe saisi correspond au mot de passe haché en base de données
-             if(password_verify($password, $hashed_password)){
-                // Retrouver le nom de l'id
-                $user_id = $row['id']; 
-                session_start();
-               $_SESSION['user_id'] = $user_id; 
-          
-                // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée  
-                header('Location: dashbord.php'); 
-                exit();
+                } else {
+                    $login_error = "error"; 
+                }
 
+            } else {
+                $login_error = "error";
+            }
+        } catch (PDOException $e){
+            echo "Erreur de base de données : " . $e->getMessage(); 
+        } 
 
-             } else {
-                $login_error = "error"; 
-             }
+        $conn = null; 
 
-        } else {
-            $login_error = "error";
-        }
-    } catch (PDOException $e){
-        echo "Erreur de base de données : " . $e->getMessage(); 
+    } else {
+        $login_error = "CSRF error"; 
     }
 
-    $conn = null; 
-    
 }
-?>
 
+$csrf_token = bin2hex(random_bytes(32));
+$_SESSION['csrf_token'] = $csrf_token; 
+
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -112,6 +126,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         <div class="form-group">
             <a href="#">Mot de passe oublié ?</a>
         </div>
+
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
         <!-- Bouton d'envoi -->
         <button type="submit" class="btn btn-primary">Se connecter</button>
