@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,9 +19,7 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ml-auto">            
-            <li class="nav-item">
-                <a class="nav-link" href="http://php-dev-1.online/">Se déconnecter</a>
-            </li>
+
         </ul>
     </div>
 </nav>
@@ -32,20 +31,71 @@
         <div class="col-md-6">
             <!-- Formulaire d'ajout de contact -->
             <form action="" method="POST">
-                <div class="form-group">
-                    <label for="nom">Nom</label>
-                    <input type="text" class="form-control" id="nom" name="nom" required>
-                </div>
-                <div class="form-group">
-                    <label for="prenom">Prénom</label>
-                    <input type="text" class="form-control" id="prenom" name="prenom" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Adresse e-mail</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
-                </div>
-                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                <button type="submit" class="btn btn-primary">Ajouter Contact</button>
+                <?php
+
+if (isset($_GET['id'])){
+    $id_contact = $_GET['id']; 
+        // Établir une connexion à la base de données avec PDO
+        $servername = "mysql:host=mysql";
+        $username = getenv("MYSQL_USER");
+        $password_db = getenv("MYSQL_PASSWORD");
+        $dbname = getenv("MYSQL_DATABASE");
+
+        $conn = new PDO("$servername;dbname=$dbname;charset=utf8", $username, $password_db);
+        
+        // Définir le mode d'erreur PDO sur exception (sert à gérer les erreurs plus facilement)
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    try{
+        $sql = "SELECT nom, prenom, email, utilisateur_id FROM contacts WHERE id = :id_contact";
+        $stmt = $conn->prepare($sql); 
+        $stmt->bindParam(':id_contact', $id_contact); 
+        $stmt->execute(); 
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC); 
+
+            foreach ($results as $row){
+            $nom_contact = $row['nom'];
+            $prenom_contact = $row['prenom']; 
+            $email_contact = $row['email'];
+            $id_utilisateur = $row['utilisateur_id'];
+
+            echo "<div class='form-group'>
+                <label for='nom'>Nom</label>
+                <input type='text' class='form-control' id='nom' name='nom' value='$nom_contact' required>
+            </div>
+            <div class='form-group'>
+                <label for='prenom'>Prénom</label>
+                <input type='text' class='form-control' id='prenom' name='prenom' value='$prenom_contact' required>
+            </div>
+            <div class='form-group'>
+                <label for='email'>Adresse e-mail</label>
+                <input type='email' class='form-control' id='email' name='email' value='$email_contact' required>
+            </div>
+            
+            <div class='form-group'>
+                <label for='prenom'>id_utilisateur</label>
+                <input type='text' class='form-control' id='id_utilisateur' name='id_utilisateur' value='$id_utilisateur' required>
+            </div>";
+            }
+
+
+    } catch(PDOException $e){
+        echo "Erreur lors de la suppression : " . $e->getMessage(); 
+    }
+
+} 
+
+
+
+
+
+
+
+                
+
+                ?>
+
+                <button type="submit" class="btn btn-primary">Modifier</button>
             </form>
         </div>
         <div class="col-md-6">
