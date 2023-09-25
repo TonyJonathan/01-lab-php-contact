@@ -11,8 +11,16 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         isset($_POST['csrf_token']) && 
         $_SESSION['csrf_token'] === $_POST['csrf_token']
     ) {
+
         $email = $_POST["email"];
         $password = $_POST["password"];
+        $rememberMe = isset($_POST['rememberMe']); 
+        if($rememberMe){
+            // Créer un cookie avec l'email et le mot de passe 
+            setcookie('user_email', $email, time() + 3600 * 24 * 2, '/');
+            setcookie('user_password', $password, time() + 3600 * 24 * 30, '/'); 
+        }
+
         try{
             // Établir une connexion à la base de données avec PDO
             $servername = "mysql:host=mysql";
@@ -24,7 +32,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
             // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
-            $sql = "SELECT id, mot_de_passe FROM utilisateurs WHERE email = :email";
+            $sql = "SELECT id, mot_de_passe, sel FROM utilisateurs WHERE email = :email";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':email', $email);
             $stmt->execute();
@@ -34,26 +42,27 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 
             // Si un utilisateur correspondant est trouvé
 
-            if($row) {
-                $hashed_password = $row['mot_de_passe'];
-                // Vérifier si le mot de passe saisi correspond au mot de passe haché en base de données
-                if(password_verify($password, $hashed_password)){
-                    // Retrouver le nom de l'id
-                    $user_id = $row['id']; 
-                    
-                $_SESSION['user_id'] = $user_id; 
+            if ($row) {
+                $hashed_password_data = $row['mot_de_passe'];
+                $sel = $row['sel'];
             
-                    // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée  
-                    header('Location: dashbord.php'); 
+                // Utilisez password_verify pour vérifier le mot de passe
+                if (password_verify($password . $sel, $hashed_password_data)) {
+                    // Retrouver le nom de l'id
+                    $user_id = $row['id'];
+            
+                    $_SESSION['user_id'] = $user_id;
+            
+                    // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée
+                    header('Location: dashbord.php');
                     exit();
-
                 } else {
-                    $login_error = "error"; 
+                    $login_error = "error";
                 }
-
             } else {
                 $login_error = "error";
             }
+            
         } catch (PDOException $e){
             echo "Erreur de base de données : " . $e->getMessage(); 
         } 
@@ -98,6 +107,14 @@ $_SESSION['csrf_token'] = $csrf_token;
 
 <div class="container mt-5">
     <h2>Formulaire de Connexion</h2>
+
+    <?php 
+            if($login_error === "error"){
+                echo "<div class='alert alert-danger' role='alert'>
+                Les identifiants sont incorrectes.
+              </div>"; 
+            }
+        ?>
     <form action="" method="POST">
         <!-- Champ : Adresse e-mail -->
         <div class="form-group">
@@ -111,11 +128,6 @@ $_SESSION['csrf_token'] = $csrf_token;
             <input type="password" class="form-control" id="password" name="password" required>
         </div>
 
-        <?php 
-            if($login_error === "error"){
-                echo "<p style='color: red;'>Les identifiants sont incorrectes.</p>"; 
-            }
-        ?>
         <!-- Option : Se souvenir de moi -->
         <div class="form-group form-check">
             <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">

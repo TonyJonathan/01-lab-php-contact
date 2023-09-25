@@ -14,6 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
         $email = $_POST["email"]; 
         $password = $_POST["password"]; 
         $password_repeat = $_POST["password_repeat"]; 
+        $sel = bin2hex(random_bytes(16)); // Générez un sel aléatoire sécurisé (16 octets ici)
 
         if($password === $password_repeat){
 
@@ -30,24 +31,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
                 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                 // Préparer une requête SQL pour insérer les données
-                $sql = "INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe) values (:prenom, :nom, :email, :mot_de_passe)";
+                $sql = "INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe, sel) values (:prenom, :nom, :email, :mot_de_passe, :sel)";
                 $stmt = $conn->prepare($sql); 
 
                 // Hacher le mot de passe avant de l'insérer dans la base de données (pour des raisons de sécurité)
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT); 
+                
+                $hashed_password = password_hash($password . $sel, PASSWORD_DEFAULT); 
 
                 // Lier les paramètres et exécuter la requête
                 $stmt->bindParam(':prenom', $prenom);
                 $stmt->bindParam(':nom', $nom); 
                 $stmt->bindParam(':email', $email);
                 $stmt->bindParam(':mot_de_passe', $hashed_password); 
+                $stmt->bindParam(':sel', $sel); 
 
                 $stmt->execute(); 
 
             header('Location: index.php');
             exit();
             
-
+            
             } catch (PDOExeption $e) {
                 echo "Erreur dans l'inscription des données : " . $e->getMessage(); 
             }
