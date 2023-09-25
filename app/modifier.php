@@ -74,7 +74,9 @@ $_SESSION['crsf_token'] = $csrf_token;
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ml-auto">            
-
+            <li class="nav-item">
+                <a class="nav-link" href="deconnexion.php">Se déconnecter</a>
+            </li>
         </ul>
     </div>
 </nav>

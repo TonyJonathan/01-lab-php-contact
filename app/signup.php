@@ -73,11 +73,6 @@ $_SESSION['csrf_token'] = $csrf_token;
 ?>
 
 
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>

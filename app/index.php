@@ -1,76 +1,132 @@
 <?php
 session_start();
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-$login_error = "";
-// Vérification du formulaire de connexion
-if($_SERVER["REQUEST_METHOD"] == "POST"){
-    if(
-        isset($_SESSION['csrf_token']) &&
-        isset($_POST['csrf_token']) && 
-        $_SESSION['csrf_token'] === $_POST['csrf_token']
-    ) {
+if (isset($_COOKIE['user_email']) && isset ($_COOKIE['user_password'])){
+    $email = $_COOKIE['user_email']; 
+    $password = $_COOKIE['user_password']; 
 
-        $email = $_POST["email"];
-        $password = $_POST["password"];
-        $rememberMe = isset($_POST['rememberMe']); 
-        if($rememberMe){
-            // Créer un cookie avec l'email et le mot de passe 
-            setcookie('user_email', $email, time() + 3600 * 24 * 2, '/');
-            setcookie('user_password', $password, time() + 3600 * 24 * 30, '/'); 
-        }
+    try{
+        // Établir une connexion à la base de données avec PDO
+        $servername = "mysql:host=mysql";
+        $username = getenv("MYSQL_USER");
+        $password_db = getenv("MYSQL_PASSWORD");
+        $dbname = getenv("MYSQL_DATABASE");
+        
 
-        try{
-            // Établir une connexion à la base de données avec PDO
-            $servername = "mysql:host=mysql";
-            $username = getenv("MYSQL_USER");
-            $password_db = getenv("MYSQL_PASSWORD");
-            $dbname = getenv("MYSQL_DATABASE");
-            
+        $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
-            $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
+        // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
+        $sql = "SELECT id, mot_de_passe, sel FROM utilisateurs WHERE email = :email";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
 
-            // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
-            $sql = "SELECT id, mot_de_passe, sel FROM utilisateurs WHERE email = :email";
-            $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':email', $email);
-            $stmt->execute();
+        // Récupérer le résultat de la requête
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Récupérer le résultat de la requête
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Si un utilisateur correspondant est trouvé
 
-            // Si un utilisateur correspondant est trouvé
-
-            if ($row) {
-                $hashed_password_data = $row['mot_de_passe'];
-                $sel = $row['sel'];
-            
-                // Utilisez password_verify pour vérifier le mot de passe
-                if (password_verify($password . $sel, $hashed_password_data)) {
-                    // Retrouver le nom de l'id
-                    $user_id = $row['id'];
-            
-                    $_SESSION['user_id'] = $user_id;
-            
-                    // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée
-                    header('Location: dashbord.php');
-                    exit();
-                } else {
-                    $login_error = "error";
-                }
+        if ($row) {
+            $hashed_password_data = $row['mot_de_passe'];
+            $sel = $row['sel'];
+        
+            // Utilisez password_verify pour vérifier le mot de passe
+            if (password_verify($password . $sel, $hashed_password_data)) {
+                // Retrouver le nom de l'id
+                $user_id = $row['id'];
+        
+                $_SESSION['user_id'] = $user_id;
+        
+                // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée
+                header('Location: dashbord.php');
+                exit();
             } else {
                 $login_error = "error";
             }
-            
-        } catch (PDOException $e){
-            echo "Erreur de base de données : " . $e->getMessage(); 
-        } 
+        } else {
+            $login_error = "error";
+        }
+        
+    } catch (PDOException $e){
+        echo "Erreur de base de données : " . $e->getMessage(); 
+    } 
 
-        $conn = null; 
+    $conn = null; 
+} else {
 
-    } else {
-        $login_error = "CSRF error"; 
+
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+    $login_error = "";
+    // Vérification du formulaire de connexion
+    if($_SERVER["REQUEST_METHOD"] == "POST"){
+        if(
+            isset($_SESSION['csrf_token']) &&
+            isset($_POST['csrf_token']) && 
+            $_SESSION['csrf_token'] === $_POST['csrf_token']
+        ) {
+
+            $email = $_POST["email"];
+            $password = $_POST["password"];
+            $rememberMe = isset($_POST['rememberMe']); 
+            if($rememberMe){
+                // Créer un cookie avec l'email et le mot de passe 
+                setcookie('user_email', $email, time() + 3600 * 24 * 2, '/');
+                setcookie('user_password', $password, time() + 3600 * 24 * 2, '/'); 
+            }
+
+            try{
+                // Établir une connexion à la base de données avec PDO
+                $servername = "mysql:host=mysql";
+                $username = getenv("MYSQL_USER");
+                $password_db = getenv("MYSQL_PASSWORD");
+                $dbname = getenv("MYSQL_DATABASE");
+                
+
+                $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
+
+                // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
+                $sql = "SELECT id, mot_de_passe, sel FROM utilisateurs WHERE email = :email";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':email', $email);
+                $stmt->execute();
+
+                // Récupérer le résultat de la requête
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                // Si un utilisateur correspondant est trouvé
+
+                if ($row) {
+                    $hashed_password_data = $row['mot_de_passe'];
+                    $sel = $row['sel'];
+                
+                    // Utilisez password_verify pour vérifier le mot de passe
+                    if (password_verify($password . $sel, $hashed_password_data)) {
+                        // Retrouver le nom de l'id
+                        $user_id = $row['id'];
+                
+                        $_SESSION['user_id'] = $user_id;
+                
+                        // Authentification réussie, rediriger l'utilisateur vers la page d'accueil ou autre page sécurisée
+                        header('Location: dashbord.php');
+                        exit();
+                    } else {
+                        $login_error = "error";
+                    }
+                } else {
+                    $login_error = "error";
+                }
+                
+            } catch (PDOException $e){
+                echo "Erreur de base de données : " . $e->getMessage(); 
+            } 
+
+            $conn = null; 
+
+        } else {
+            $login_error = "CSRF error"; 
+        }
+
     }
 
 }
