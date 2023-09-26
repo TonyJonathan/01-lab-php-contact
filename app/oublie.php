@@ -42,7 +42,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
     $conn = null;
 
     $subject = "Créer votre nouveau mot de passe"; 
-    $message = "Veuillez cliquer sur ce lien pour créer votre nouveau mot de passe : http://php-dev-1.online/reset-password?$token"; 
+    $message = "Veuillez cliquer sur ce lien pour créer votre nouveau mot de passe : http://php-dev-1.online/reset-password.php?token=" . urlencode($token); 
 
     $headers = "From: service@connexion.com\r\n";
     $headers .= "Reply-To: service@connexion.com\r\n";
