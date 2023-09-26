@@ -13,7 +13,12 @@ services:
     volumes:
       - type: bind
         source: ./app
-        target: /var/www/html 
+        target: /var/www/html    
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"  # Port pour la réception des e-mails
+      - "8025:8025"  # Interface Web de MailHog
   mysql: 
     image: mysql
     ports: 
@@ -29,4 +34,3 @@ services:
       - MYSQL_PASSWORD=jo1234
 volumes:
   contact: 
-    
