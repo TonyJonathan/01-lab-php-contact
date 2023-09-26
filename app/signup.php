@@ -1,5 +1,6 @@
 <?php
 session_start(); 
+$different = "";
 
    // Récupérer les données soumises
 if ($_SERVER["REQUEST_METHOD"] == "POST"){
@@ -59,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
             $conn = null;
         
         } else {
-            echo "Les mots de passe ne correspondent pas.";
+            $different = "error"; 
         }
 
     } else {
@@ -87,6 +88,13 @@ $_SESSION['csrf_token'] = $csrf_token;
 
 <div class="container mt-5">
     <h2>Formulaire d'Inscription</h2>
+    <?php 
+            if($different === "error" ){
+                echo "<div class='alert alert-danger' role='alert'>
+                Les mots de passe ne correspondent pas.
+              </div>"; 
+            }
+        ?>
     <form action="" method="POST">
         <!-- Champ : Prénom -->
         <div class="form-group">
