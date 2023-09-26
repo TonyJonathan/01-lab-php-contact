@@ -1,61 +1,74 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 $email = "";  
-if($_SERVER['REQUEST_METHOD'] == "POST"){
-    $email = $_POST["email"]; 
+if(
+    isset($_SESSION['csrf_token']) &&
+    isset($_POST['csrf_token']) && 
+    $_SESSION['csrf_token'] === $_POST['csrf_token']
+) {
+
+    if($_SERVER['REQUEST_METHOD'] == "POST"){
+        $email = $_POST["email"]; 
 
 
-    try{
-        // Établir une connexion à la base de données avec PDO
-        $servername = "mysql:host=mysql";
-        $username = getenv("MYSQL_USER");
-        $password_db = getenv("MYSQL_PASSWORD");
-        $dbname = getenv("MYSQL_DATABASE");
-        
+        try{
+            // Établir une connexion à la base de données avec PDO
+            $servername = "mysql:host=mysql";
+            $username = getenv("MYSQL_USER");
+            $password_db = getenv("MYSQL_PASSWORD");
+            $dbname = getenv("MYSQL_DATABASE");
+            
 
-        $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
+            $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
-        // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
-        $sql = "SELECT id, token FROM utilisateurs WHERE email = :email";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
+            // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
+            $sql = "SELECT id, token FROM utilisateurs WHERE email = :email";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
 
-        $row = $stmt->fetch(PDO::FETCH_ASSOC); 
+            $row = $stmt->fetch(PDO::FETCH_ASSOC); 
 
-        if($row){
-            $user_id = $row['id']; 
-            $token = hash('sha256', $user_id . time()); 
+            if($row){
+                $user_id = $row['id']; 
+                $token = hash('sha256', $user_id . time()); 
+            }
+
+            $sql = "UPDATE utilisateurs SET token = :token WHERE id = :user_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':token', $token);
+            $stmt->bindParam(':user_id', $user_id); 
+            $stmt->execute(); 
+
+        } catch (PDOException $e){
+            echo "Erreur dans l'inscription des données : " . $e->getMessage(); 
         }
 
-        $sql = "UPDATE utilisateurs SET token = :token WHERE id = :user_id";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':token', $token);
-        $stmt->bindParam(':user_id', $user_id); 
-        $stmt->execute(); 
+        $conn = null;
 
-    } catch (PDOException $e){
-        echo "Erreur dans l'inscription des données : " . $e->getMessage(); 
+        $subject = "Créer votre nouveau mot de passe"; 
+        $message = "Veuillez cliquer sur ce lien pour créer votre nouveau mot de passe : http://php-dev-1.online/reset-password.php?token=" . urlencode($token); 
+
+        $headers = "From: service@connexion.com\r\n";
+        $headers .= "Reply-To: service@connexion.com\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
+
+        // Utilisez l'adresse IP et le port de MailHog comme serveur SMTP
+    
+
+        mail($email, $subject, $message, $headers); 
+
     }
-
-    $conn = null;
-
-    $subject = "Créer votre nouveau mot de passe"; 
-    $message = "Veuillez cliquer sur ce lien pour créer votre nouveau mot de passe : http://php-dev-1.online/reset-password.php?token=" . urlencode($token); 
-
-    $headers = "From: service@connexion.com\r\n";
-    $headers .= "Reply-To: service@connexion.com\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion();
-
-    // Utilisez l'adresse IP et le port de MailHog comme serveur SMTP
-  
-
-    mail($email, $subject, $message, $headers); 
-
-
 }
+
+$csfr_token = bin2hex(random_bytes(32)); 
+$_SESSION['csrf_token'] = $csrf_token; 
+
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -104,7 +117,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
         </div>
 
       
-
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
         <!-- Bouton d'envoi -->
         <button type="submit" class="btn btn-primary">Envoyer</button>

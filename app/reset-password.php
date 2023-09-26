@@ -1,56 +1,68 @@
 <?php 
+session_start();
 $error = ""; 
-if (isset($_GET['token'])) {
-    // Récupérez la valeur du token depuis l'URL
-    $token = $_GET['token'];
-    if($_SERVER['REQUEST_METHOD'] == "POST"){
-        $password = $_POST['password'];
-        $new_password = $_POST['new_password']; 
+
+if(
+    isset($_SESSION['csrf_token']) &&
+    isset($_POST['csrf_token']) && 
+    $_SESSION['csrf_token'] === $_POST['csrf_token']
+) {
+
+    if (isset($_GET['token'])) {
+        // Récupérez la valeur du token depuis l'URL
+        $token = $_GET['token'];
+        if($_SERVER['REQUEST_METHOD'] == "POST"){
+            $password = $_POST['password'];
+            $new_password = $_POST['new_password']; 
 
 
-        if ($password == $new_password){
+            if ($password == $new_password){
 
-            try{
-                // Établir une connexion à la base de données avec PDO
-                $servername = "mysql:host=mysql";
-                $username = getenv("MYSQL_USER");
-                $password_db = getenv("MYSQL_PASSWORD");
-                $dbname = getenv("MYSQL_DATABASE");
-                
+                try{
+                    // Établir une connexion à la base de données avec PDO
+                    $servername = "mysql:host=mysql";
+                    $username = getenv("MYSQL_USER");
+                    $password_db = getenv("MYSQL_PASSWORD");
+                    $dbname = getenv("MYSQL_DATABASE");
+                    
 
-                $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
+                    $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
 
-                $sql = "SELECT sel FROM utilisateurs WHERE token = :token";
-                $stmt = $conn->prepare($sql); 
-                $stmt->bindParam(':token', $token);
-                $stmt->execute(); 
-
-                $row = $stmt->fetch(PDO::FETCH_ASSOC); 
-
-                if($row){
-                    $sel = $row['sel'];
-                    $hashed_password = password_hash($password . $sel, PASSWORD_DEFAULT); 
-
-                    $sql = "UPDATE utilisateurs set mot_de_passe = :hashed_password WHERE token = :token";
+                    $sql = "SELECT sel FROM utilisateurs WHERE token = :token";
                     $stmt = $conn->prepare($sql); 
-                    $stmt->bindParam('hashed_password', $hashed_password); 
                     $stmt->bindParam(':token', $token);
                     $stmt->execute(); 
+
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC); 
+
+                    if($row){
+                        $sel = $row['sel'];
+                        $hashed_password = password_hash($password . $sel, PASSWORD_DEFAULT); 
+
+                        $sql = "UPDATE utilisateurs set mot_de_passe = :hashed_password WHERE token = :token";
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam('hashed_password', $hashed_password); 
+                        $stmt->bindParam(':token', $token);
+                        $stmt->execute(); 
+                    }
+
+                    $error = "no error";
+
+                } catch (PDOExeption $e){
+                    echo "Erreur de base de données : " . $e->getMessage(); 
                 }
 
-                $error = "no error";
+                $conn = null;
 
-            } catch (PDOExeption $e){
-                echo "Erreur de base de données : " . $e->getMessage(); 
+            } else {
+                $error = "error"; 
             }
-
-            $conn = null;
-
-        } else {
-            $error = "error"; 
         }
     }
 }
+
+$csrf_token = bin2hex(random_bytes(32));
+$_SESSION['csrf_token'] = $csrf_token; 
 ?>
 
 
@@ -115,6 +127,8 @@ if (isset($_GET['token'])) {
             <label for="password">Confirmer le mot de passe</label>
             <input type="password" class="form-control" id="new_password" name="new_password" required>
         </div>
+
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
         <!-- Bouton d'envoi -->
         <button type="submit" class="btn btn-primary">Modifier</button>
