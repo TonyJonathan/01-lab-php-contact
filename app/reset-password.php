@@ -39,6 +39,7 @@ if (isset($_GET['token'])) {
                 }
 
                 $error = "no error";
+
             } catch (PDOExeption $e){
                 echo "Erreur de base de données : " . $e->getMessage(); 
             }
@@ -91,9 +92,15 @@ if (isset($_GET['token'])) {
                 Les mots de passe ne correspondent pas.
               </div>"; 
             } else if ($error === "no error"){
-                echo " <div class='alert alert-success' role='alert'>
-                Le mot de passe à bien été modifier ✓ 
-               </div>";
+                echo "<div class='alert alert-success' role='alert'>
+                Le mot de passe a bien été modifié ✓  Vous allez être redirigé(e) <div class='spinner-border spinner-border-sm' role='status' style='margin-left: 7px;'>
+                </div> 
+                </div>";
+                echo "<script>
+                setTimeout(function() {
+                 window.location.href = 'http://php-dev-1.online/';
+                }, 5000); // 5000 millisecondes (5 secondes)
+                </script>";
             }
         ?>
     <form action="" method="POST">
