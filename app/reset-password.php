@@ -2,66 +2,96 @@
 session_start();
 $error = ""; 
 
-if(
-    isset($_SESSION['csrf_token']) &&
-    isset($_POST['csrf_token']) && 
-    $_SESSION['csrf_token'] === $_POST['csrf_token']
-) {
-
-    if (isset($_GET['token'])) {
-        // Récupérez la valeur du token depuis l'URL
-        $token = $_GET['token'];
-        if($_SERVER['REQUEST_METHOD'] == "POST"){
-            $password = $_POST['password'];
-            $new_password = $_POST['new_password']; 
 
 
-            if ($password == $new_password){
+if (isset($_GET['token'])) {
+     // Récupérez la valeur du token depuis l'URL
+    $tokenWithTimestamp = $_GET['token'];
+        
 
-                try{
-                    // Établir une connexion à la base de données avec PDO
-                    $servername = "mysql:host=mysql";
-                    $username = getenv("MYSQL_USER");
-                    $password_db = getenv("MYSQL_PASSWORD");
-                    $dbname = getenv("MYSQL_DATABASE");
-                    
+    // Séparez le token du timestamp en utilisant le caractère délimiteur "|" utiliser dans oublie.php pour créer le tokenWithTimestamp
+    $tokenParts = explode('|', $tokenWithTimestamp); 
 
-                    $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
-
-                    $sql = "SELECT sel FROM utilisateurs WHERE token = :token";
-                    $stmt = $conn->prepare($sql); 
-                    $stmt->bindParam(':token', $token);
-                    $stmt->execute(); 
-
-                    $row = $stmt->fetch(PDO::FETCH_ASSOC); 
-
-                    if($row){
-                        $sel = $row['sel'];
-                        $hashed_password = password_hash($password . $sel, PASSWORD_DEFAULT); 
-
-                        $sql = "UPDATE utilisateurs set mot_de_passe = :hashed_password WHERE token = :token";
-                        $stmt = $conn->prepare($sql); 
-                        $stmt->bindParam('hashed_password', $hashed_password); 
-                        $stmt->bindParam(':token', $token);
-                        $stmt->execute(); 
-                    }
-
-                    $error = "no error";
-
-                } catch (PDOExeption $e){
-                    echo "Erreur de base de données : " . $e->getMessage(); 
-                }
-
-                $conn = null;
-
-            } else {
-                $error = "error"; 
-            }
-        }
+    // verification d'une decoupe en 2 partie entre le token et le timestamp
+    if(count($tokenParts) === 2){
+        $token = $tokenParts[0];
+        // int transforme une chaîne de caracteres en nombre entier (plus facile pour traiter la suite)
+        $timestamp = (int)$tokenParts[1]; 
     }
-}
 
-$csrf_token = bin2hex(random_bytes(32));
+    // On compare le timestamp avec l'heure actuelle pour déterminer la validité du lien
+    $expirationTime = 60;  //10min en sec
+
+
+    if (time()-$timestamp <= $expirationTime){
+        // Le lien est encore valide
+        if($_SERVER['REQUEST_METHOD'] == "POST"){
+            if(
+                isset($_SESSION['csrf_token']) &&
+                isset($_POST['csrf_token']) && 
+                $_SESSION['csrf_token'] === $_POST['csrf_token']
+            ) {
+                $password = $_POST['password'];
+                $new_password = $_POST['new_password']; 
+        
+        
+                if ($password == $new_password){
+        
+                    try{
+                        // Établir une connexion à la base de données avec PDO
+                        $servername = "mysql:host=mysql";
+                        $username = getenv("MYSQL_USER");
+                        $password_db = getenv("MYSQL_PASSWORD");
+                        $dbname = getenv("MYSQL_DATABASE");
+                            
+        
+                        $conn = new PDO("$servername;dbname=$dbname; charset=utf8", $username, $password_db);
+        
+                        $sql = "SELECT sel FROM utilisateurs WHERE token = :tokenWithTimestamp";
+                        $stmt = $conn->prepare($sql); 
+                        $stmt->bindParam(':tokenWithTimestamp', $tokenWithTimestamp);
+                        $stmt->execute(); 
+        
+                        $row = $stmt->fetch(PDO::FETCH_ASSOC); 
+        
+                        if($row){
+                            $sel = $row['sel'];
+                            $hashed_password = password_hash($password . $sel, PASSWORD_DEFAULT); 
+        
+                            $sql = "UPDATE utilisateurs set mot_de_passe = :hashed_password WHERE token = :tokenWithTimestamp";
+                            $stmt = $conn->prepare($sql); 
+                            $stmt->bindParam('hashed_password', $hashed_password); 
+                            $stmt->bindParam(':tokenWithTimestamp', $tokenWithTimestamp);
+                            $stmt->execute(); 
+                        }
+        
+                        $error = "no error";
+        
+                    } catch (PDOExeption $e){
+                        echo "Erreur de base de données : " . $e->getMessage(); 
+                    }
+        
+                    $conn = null;
+        
+                } else {
+                    $error = "error"; 
+                }
+            } else {
+                echo "probleme CSRF";
+            }
+
+        }
+        
+    } else {
+        header('Location: novalid.php');
+        exit(); 
+
+    }
+} else {
+    echo "Problème avec le lien"; 
+} 
+
+$csrf_token = bin2hex(random_bytes(32)); 
 $_SESSION['csrf_token'] = $csrf_token; 
 ?>
 

@@ -3,13 +3,15 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 $email = "";  
-if(
-    isset($_SESSION['csrf_token']) &&
-    isset($_POST['csrf_token']) && 
-    $_SESSION['csrf_token'] === $_POST['csrf_token']
-) {
 
-    if($_SERVER['REQUEST_METHOD'] == "POST"){
+
+if($_SERVER['REQUEST_METHOD'] == "POST"){
+        
+    if(
+        isset($_SESSION['csrf_token']) &&
+        isset($_POST['csrf_token']) && 
+        $_SESSION['csrf_token'] === $_POST['csrf_token']
+    ) {
         $email = $_POST["email"]; 
 
 
@@ -33,12 +35,16 @@ if(
 
             if($row){
                 $user_id = $row['id']; 
-                $token = hash('sha256', $user_id . time()); 
+                $token = hash('sha256', $user_id . time());
+                // ajout d'un timestamp pour pouvoir faire expirer le lien sur la page reset-password.php
+                $timestamp = time(); 
+                $tokenWithTimeStamp = $token . '|' . $timestamp; 
+
             }
 
-            $sql = "UPDATE utilisateurs SET token = :token WHERE id = :user_id";
+            $sql = "UPDATE utilisateurs SET token = :tokenWithTimeStamp WHERE id = :user_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':token', $token);
+            $stmt->bindParam(':tokenWithTimeStamp', $tokenWithTimeStamp);
             $stmt->bindParam(':user_id', $user_id); 
             $stmt->execute(); 
 
@@ -49,7 +55,7 @@ if(
         $conn = null;
 
         $subject = "Créer votre nouveau mot de passe"; 
-        $message = "Veuillez cliquer sur ce lien pour créer votre nouveau mot de passe : http://php-dev-1.online/reset-password.php?token=" . urlencode($token); 
+        $message = "Veuillez cliquer sur ce lien pour créer votre nouveau mot de passe : http://php-dev-1.online/reset-password.php?token=" . urlencode($tokenWithTimeStamp); 
 
         $headers = "From: service@connexion.com\r\n";
         $headers .= "Reply-To: service@connexion.com\r\n";
@@ -60,10 +66,12 @@ if(
 
         mail($email, $subject, $message, $headers); 
 
+    } else {
+        echo "CSRF error"; 
     }
 }
 
-$csfr_token = bin2hex(random_bytes(32)); 
+$csrf_token = bin2hex(random_bytes(32)); 
 $_SESSION['csrf_token'] = $csrf_token; 
 
 ?>
