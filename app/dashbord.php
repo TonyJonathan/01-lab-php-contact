@@ -1,14 +1,15 @@
 <?php
 session_start(); 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+
 // Vérifiez si l'adresse e-mail de l'utilisateur est stockée dans la session
 if($_SERVER['REQUEST_METHOD'] == "POST"){
     if(
         isset($_POST['csrf_token']) &&
         isset($_SESSION['csrf_token']) && 
-        $_POST['csrf_token'] === $_SESSION['csrf_token']
+        $_POST['csrf_token'] === $_SESSION['csrf_token'] &&
+        isset($_POST['nom']) &&
+        isset($_POST['prenom']) &&
+        isset($_POST['email'])
     ) {
         $nom = $_POST['nom']; 
         $prenom = $_POST['prenom'];
@@ -35,10 +36,10 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 
                 $sql = "INSERT into contacts (nom, prenom, email, utilisateur_id) values (:nom, :prenom, :email, :utilisateur_id)"; 
                 $stmt = $conn->prepare($sql); 
-                $stmt->bindParam(':nom', $nom); 
-                $stmt->bindParam(':prenom', $prenom);
-                $stmt->bindParam(':email', $email); 
-                $stmt->bindParam(':utilisateur_id', $user_id); 
+                $stmt->bindParam(':nom', $nom, PDO::PARAM_STR); 
+                $stmt->bindParam(':prenom', $prenom, PDO::PARAM_STR);
+                $stmt->bindParam(':email', $email, PDO::PARAM_STR); 
+                $stmt->bindParam(':utilisateur_id', $user_id, PDO::PARAM_INT); 
                 $stmt->execute();
 
                 header('Location: dashbord.php'); 
@@ -134,7 +135,7 @@ $_SESSION['csrf_token'] = $csrf_token;
         
                 $sql = "SELECT id, nom, prenom, email FROM contacts WHERE utilisateur_id = :utilisateur_id"; 
                 $stmt = $conn->prepare($sql); 
-                $stmt->bindParam(':utilisateur_id', $user_id); 
+                $stmt->bindParam(':utilisateur_id', $user_id, PDO::PARAM_INT); 
                 $stmt->execute();
                 $results = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 

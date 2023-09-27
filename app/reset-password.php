@@ -29,7 +29,9 @@ if (isset($_GET['token'])) {
             if(
                 isset($_SESSION['csrf_token']) &&
                 isset($_POST['csrf_token']) && 
-                $_SESSION['csrf_token'] === $_POST['csrf_token']
+                $_SESSION['csrf_token'] === $_POST['csrf_token'] &&
+                isset($_POST['password']) &&
+                isset($_POST['new_password'])
             ) {
                 $password = $_POST['password'];
                 $new_password = $_POST['new_password']; 
@@ -49,7 +51,7 @@ if (isset($_GET['token'])) {
         
                         $sql = "SELECT sel FROM utilisateurs WHERE token = :tokenWithTimestamp";
                         $stmt = $conn->prepare($sql); 
-                        $stmt->bindParam(':tokenWithTimestamp', $tokenWithTimestamp);
+                        $stmt->bindParam(':tokenWithTimestamp', $tokenWithTimestamp, PDO::PARAM_STR);
                         $stmt->execute(); 
         
                         $row = $stmt->fetch(PDO::FETCH_ASSOC); 
@@ -60,8 +62,8 @@ if (isset($_GET['token'])) {
         
                             $sql = "UPDATE utilisateurs set mot_de_passe = :hashed_password WHERE token = :tokenWithTimestamp";
                             $stmt = $conn->prepare($sql); 
-                            $stmt->bindParam('hashed_password', $hashed_password); 
-                            $stmt->bindParam(':tokenWithTimestamp', $tokenWithTimestamp);
+                            $stmt->bindParam('hashed_password', $hashed_password, PDO::PARAM_STR); 
+                            $stmt->bindParam(':tokenWithTimestamp', $tokenWithTimestamp, PDO::PARAM_STR);
                             $stmt->execute(); 
                         }
         

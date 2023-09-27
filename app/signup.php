@@ -7,7 +7,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
     if(
         isset($_POST['csrf_token']) &&
         isset($_SESSION['csrf_token']) &&
-        $_SESSION['csrf_token'] === $_POST['csrf_token']
+        $_SESSION['csrf_token'] === $_POST['csrf_token'] &&
+        isset($_POST['nom']) &&
+        isset($_POST['prenom']) &&
+        isset($_POST['email']) && 
+        isset($_POST['password']) &&
+        isset($_POST['password_repeat'])
     ) {
 
         $prenom = $_POST["prenom"]; 
@@ -40,11 +45,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
                 $hashed_password = password_hash($password . $sel, PASSWORD_DEFAULT); 
 
                 // Lier les paramètres et exécuter la requête
-                $stmt->bindParam(':prenom', $prenom);
-                $stmt->bindParam(':nom', $nom); 
-                $stmt->bindParam(':email', $email);
-                $stmt->bindParam(':mot_de_passe', $hashed_password); 
-                $stmt->bindParam(':sel', $sel); 
+                $stmt->bindParam(':prenom', $prenom, PDO::PARAM_STR);
+                $stmt->bindParam(':nom', $nom, PDO::PARAM_STR); 
+                $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+                $stmt->bindParam(':mot_de_passe', $hashed_password, PDO::PARAM_STR); 
+                $stmt->bindParam(':sel', $sel, PDO::PARAM_STR); 
 
                 $stmt->execute(); 
 

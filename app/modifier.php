@@ -5,8 +5,12 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
     if(
         isset($_POST['csrf_token']) &&
         isset($_SESSION['csrf_token']) &&
-        $_SESSION['csrf_token'] === $_POST['csrf_token']
+        $_SESSION['csrf_token'] === $_POST['csrf_token'] &&
+        isset($_POST['nom']) &&
+        isset($_POST['prenom']) &&
+        isset($_POST['email'])
     ) {
+
         $nom = $_POST['nom']; 
         $prenom = $_POST['prenom'];
         $email = $_POST['email'];
@@ -28,10 +32,10 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
             $sql = "UPDATE contacts set nom = :nom, prenom = :prenom, email = :email WHERE id = :id";
     
             $stmt = $conn->prepare($sql); 
-            $stmt->bindParam(':id', $id);
-            $stmt->bindParam(':nom', $nom);
-            $stmt->bindParam(':prenom', $prenom);
-            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->bindParam(':nom', $nom, PDO::PARAM_STR);
+            $stmt->bindParam(':prenom', $prenom, PDO::PARAM_STR);
+            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->execute();
     
             header('Location: dashbord.php');
@@ -105,7 +109,7 @@ $_SESSION['crsf_token'] = $csrf_token;
                     try{
                         $sql = "SELECT nom, prenom, email, utilisateur_id FROM contacts WHERE id = :id_contact";
                         $stmt = $conn->prepare($sql); 
-                        $stmt->bindParam(':id_contact', $id_contact); 
+                        $stmt->bindParam(':id_contact', $id_contact, PDO::PARAM_INT); 
                         $stmt->execute(); 
                         $results = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 

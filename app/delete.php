@@ -15,7 +15,7 @@ if (isset($_GET['id'])){
     try{
         $sql = "DELETE FROM contacts WHERE id = :id_contact";
         $stmt = $conn->prepare($sql); 
-        $stmt->bindParam(':id_contact', $id_contact); 
+        $stmt->bindParam(':id_contact', $id_contact, PDO::PARAM_INT); 
         $stmt->execute(); 
     } catch(PDOException $e){
         echo "Erreur lors de la suppression : " . $e->getMessage(); 

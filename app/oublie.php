@@ -10,7 +10,8 @@ if($_SERVER['REQUEST_METHOD'] === "POST"){
     if(
         isset($_SESSION['csrf_token']) &&
         isset($_POST['csrf_token']) && 
-        $_SESSION['csrf_token'] === $_POST['csrf_token']
+        $_SESSION['csrf_token'] === $_POST['csrf_token'] &&
+        isset($_POST['email'])
     ) {
         $email = $_POST["email"]; 
 
@@ -28,7 +29,7 @@ if($_SERVER['REQUEST_METHOD'] === "POST"){
             // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
             $sql = "SELECT id, token FROM utilisateurs WHERE email = :email";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->execute();
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC); 
@@ -44,8 +45,8 @@ if($_SERVER['REQUEST_METHOD'] === "POST"){
 
             $sql = "UPDATE utilisateurs SET token = :tokenWithTimeStamp WHERE id = :user_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':tokenWithTimeStamp', $tokenWithTimeStamp);
-            $stmt->bindParam(':user_id', $user_id); 
+            $stmt->bindParam(':tokenWithTimeStamp', $tokenWithTimeStamp, PDO::PARAM_STR);
+            $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT); 
             $stmt->execute(); 
 
         } catch (PDOException $e){

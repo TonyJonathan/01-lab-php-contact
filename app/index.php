@@ -17,7 +17,7 @@ if (isset($_COOKIE['user_email']) && isset ($_COOKIE['user_password'])){
         // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
         $sql = "SELECT id, mot_de_passe, sel FROM utilisateurs WHERE email = :email";
         $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->execute();
 
         // Récupérer le résultat de la requête
@@ -63,7 +63,10 @@ if (isset($_COOKIE['user_email']) && isset ($_COOKIE['user_password'])){
         if(
             isset($_SESSION['csrf_token']) &&
             isset($_POST['csrf_token']) && 
-            $_SESSION['csrf_token'] === $_POST['csrf_token']
+            $_SESSION['csrf_token'] === $_POST['csrf_token'] &&
+            isset($_POST['email']) &&
+            isset($_POST['password']) &&
+            isset($_POST['rememberMe']) 
         ) {
 
             $email = $_POST["email"];
@@ -88,7 +91,7 @@ if (isset($_COOKIE['user_email']) && isset ($_COOKIE['user_password'])){
                 // Préparer une requête SQL pour rechercher l'utilisateur par e-mail
                 $sql = "SELECT id, mot_de_passe, sel FROM utilisateurs WHERE email = :email";
                 $stmt = $conn->prepare($sql);
-                $stmt->bindParam(':email', $email);
+                $stmt->bindParam(':email', $email, PDO::PARAM_STR);
                 $stmt->execute();
 
                 // Récupérer le résultat de la requête
