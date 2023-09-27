@@ -60,7 +60,7 @@ if (isset($_GET['token'])) {
                             $sel = $row['sel'];
                             $hashed_password = password_hash($password . $sel, PASSWORD_DEFAULT); 
         
-                            $sql = "UPDATE utilisateurs set mot_de_passe = :hashed_password WHERE token = :tokenWithTimestamp";
+                            $sql = "UPDATE utilisateurs set mot_de_passe = :hashed_password, token = NULL WHERE token = :tokenWithTimestamp";
                             $stmt = $conn->prepare($sql); 
                             $stmt->bindParam('hashed_password', $hashed_password, PDO::PARAM_STR); 
                             $stmt->bindParam(':tokenWithTimestamp', $tokenWithTimestamp, PDO::PARAM_STR);

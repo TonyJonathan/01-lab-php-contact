@@ -65,8 +65,7 @@ if (isset($_COOKIE['user_email']) && isset ($_COOKIE['user_password'])){
             isset($_POST['csrf_token']) && 
             $_SESSION['csrf_token'] === $_POST['csrf_token'] &&
             isset($_POST['email']) &&
-            isset($_POST['password']) &&
-            isset($_POST['rememberMe']) 
+            isset($_POST['password'])
         ) {
 
             $email = $_POST["email"];
