@@ -1,5 +1,12 @@
 <?php 
 session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    // Rediriger vers la page d'authentification ou une autre page appropriée
+    header('Location: index.php');
+    exit();
+}
+
 if($_SERVER['REQUEST_METHOD'] == "POST"){
 
     if(

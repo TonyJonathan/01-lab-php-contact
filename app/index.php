@@ -1,5 +1,6 @@
 <?php
 session_start();
+$_SESSION['user_id'] = NULL;
 if (isset($_COOKIE['user_email']) && isset ($_COOKIE['user_password'])){
     $email = $_COOKIE['user_email']; 
     $password = $_COOKIE['user_password']; 
@@ -52,7 +53,6 @@ if (isset($_COOKIE['user_email']) && isset ($_COOKIE['user_password'])){
 
     $conn = null; 
 } else {
-
 
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);

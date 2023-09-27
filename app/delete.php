@@ -1,4 +1,10 @@
 <?php 
+if (!isset($_SESSION['user_id'])) {
+    // Rediriger vers la page d'authentification ou une autre page appropriée
+    header('Location: index.php');
+    exit();
+}
+
 if (isset($_GET['id'])){
     $id_contact = $_GET['id']; 
         // Établir une connexion à la base de données avec PDO
