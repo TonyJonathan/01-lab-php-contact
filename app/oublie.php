@@ -5,7 +5,7 @@ ini_set('display_errors', 1);
 $email = "";  
 
 
-if($_SERVER['REQUEST_METHOD'] == "POST"){
+if($_SERVER['REQUEST_METHOD'] === "POST"){
         
     if(
         isset($_SESSION['csrf_token']) &&
@@ -112,12 +112,12 @@ $_SESSION['csrf_token'] = $csrf_token;
     <p>Entrez l’adresse e-mail associée à votre compte</p>
     <?php 
     if($email !== ""){
-        echo " <div class='alert alert-success' role='alert' style='margin-bottom: -40px;'>
+        echo " <div class='alert alert-success' role='alert'>
                 Un mail à été envoyé à l'adresse $email ✓ 
                </div>";
     }
 ?>
-    <form action="" method="POST" style='margin-top: 50px;'>
+    <form action="" method="POST" style='margin-top: 20px;'>
         <!-- Champ : Adresse e-mail -->
         <div class="form-group">
             <label for="email">Adresse e-mail</label>
