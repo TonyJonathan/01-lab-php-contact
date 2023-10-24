@@ -20,7 +20,7 @@ if (isset($_GET['token'])) {
     }
 
     // On compare le timestamp avec l'heure actuelle pour déterminer la validité du lien
-    $expirationTime = 60;  //10min en sec
+    $expirationTime = 600;  //10min en sec
 
 
     if (time()-$timestamp <= $expirationTime){

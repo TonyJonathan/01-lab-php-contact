@@ -141,6 +141,8 @@ $_SESSION['crsf_token'] = $csrf_token;
                             </div>";
                             }
 
+                            
+
 
                     } catch(PDOException $e){
                         echo "Erreur lors de la suppression : " . $e->getMessage(); 
